@@ -1,0 +1,77 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	
+  <PropertyGroup>
+    <!-- Select the framework(s) you wish to target.
+        Rhino 6: net45
+        Rhino 7: net48
+        Rhino 8 Windows: net48, net7.0, net7.0-windows, net7.0-windows10.0.22000.0, etc
+        Rhino 8 Mac: net7.0, net7.0-macos, net7.0-macos12.0, etc
+    -->
+    <PlatformTarget>x64</PlatformTarget>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <TargetExt>.gha</TargetExt>
+    <NoWarn>NU1701;NETSDK1086</NoWarn>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+	<PropertyGroup>
+		<Version>1.0.0</Version>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<FileVersion>1.0.0.0</FileVersion>
+		<Title>Azure Kinect</Title>
+		<Authors>Andrew Jinho Ahn</Authors>
+		<Company>Hanyang University CMCIC</Company>
+		<Description>Azure Kinect DK integration for Grasshopper. Live body tracking, point cloud streaming with floor calibration, and grid mesh generation. DirectML-accelerated body tracking on any DirectX 12 GPU.</Description>
+		<PackageProjectUrl>https://github.com/AndrewJinhoAhn/AzureKinectGH</PackageProjectUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageTags>kinect;azure;body-tracking;3d-scan;depth-camera</PackageTags>
+		<Copyright>Copyright © Andrew Jinho Ahn 2026</Copyright>
+	</PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Grasshopper" Version="8.0.23304.9001" ExcludeAssets="runtime" />
+    <PackageReference Include="K4AdotNet" Version="1.4.17" />
+    <PackageReference Include="Microsoft.Azure.Kinect.BodyTracking" Version="1.1.2" />
+    <PackageReference Include="Microsoft.Azure.Kinect.Sensor" Version="1.4.2" />
+  </ItemGroup>
+  
+  <!-- For Windows only builds -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4'))">
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <!-- Reference WinForms for .NET 7.0 on macOS -->
+  <ItemGroup Condition="!($(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4')))">
+    <!-- Rhino 8.11 and later you can use this -->
+    <!-- <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" /> -->
+    
+    <!-- Rhino 8.10 and earlier -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" ExcludeAssets="all" GeneratePathProperty="true" />
+    <Reference Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net48)\build\.NETFramework\v4.8\System.Windows.Forms.dll" Private="False" />
+    <PackageReference Include="System.Drawing.Common" Version="7.0.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\*.png" />
+  </ItemGroup>
+
+    <!-- Strip unused native dependencies (DirectML-only, Full model only) -->
+	<Target Name="StripUnusedNatives" AfterTargets="Build">
+		<ItemGroup>
+			<_UnusedNatives Include="$(OutDir)onnxruntime_providers_cuda.dll" />
+			<_UnusedNatives Include="$(OutDir)onnxruntime_providers_tensorrt.dll" />
+			<_UnusedNatives Include="$(OutDir)k4arecord.dll" />
+			<_UnusedNatives Include="$(OutDir)k4arecord.pdb" />
+			<_UnusedNatives Include="$(OutDir)k4a.pdb" />
+			<_UnusedNatives Include="$(OutDir)dnn_model_2_0_lite_op11.onnx" />
+			<_UnusedNatives Include="$(OutDir)AzureKinect.pdb" />
+		</ItemGroup>
+		<Delete Files="@(_UnusedNatives)" ContinueOnError="true" />
+		<Exec Command='if exist "$(OutDir)runtimes" rmdir /s /q "$(OutDir)runtimes"'
+			  ContinueOnError="true" />
+	</Target>
+	            
+
+</Project>
