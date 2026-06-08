@@ -1,0 +1,43 @@
+---
+name: AzureKinect
+version: 1.1.0
+authors:
+- Andrew Jinho Ahn
+description: >
+  Azure Kinect DK integration for Grasshopper. Four components for real-time
+
+  depth sensing:
+
+
+  - Kinect Device -- IMU-based floor calibration aligns the scene with
+    Rhino's coordinate system. Background-thread capture loop shared across
+    consumer components.
+
+  - Body Tracker -- Skeleton tracking with persistent body IDs and per-joint
+    confidence filtering. DirectML-accelerated (no CUDA required), runs on
+    any DirectX 12 GPU.
+
+  - Point Cloud -- Structured point grid (preserves pixel-to-point mapping
+    for downstream meshing). Stride-based downsampling, floor-corrected
+    coordinates, single PointCloud object output for low GC overhead.
+
+  - Mesh from Grid -- Quad mesh from the point grid with max-edge culling
+    to separate disconnected surfaces (e.g., person vs. background wall).
+
+  Bundles the K4A Sensor SDK and Body Tracking SDK runtime -- no separate
+
+  SDK installation required by end users (USB driver still needed).
+
+
+  Requirements: Windows 10/11 (64-bit), Rhino 8, Azure Kinect DK hardware,
+
+  DirectX 12 GPU.
+url: https://github.com/AndrewJinhoAhn/AzureKinectGH
+keywords:
+- kinect
+- azure
+- body-tracking
+- point-cloud
+- 3d-scan
+- depth-camera
+- guid:9bcdcead-87c5-43a4-a653-ee9e253b94d2

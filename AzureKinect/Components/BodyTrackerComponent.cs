@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Grasshopper;
 using Grasshopper.Kernel;
@@ -11,12 +11,12 @@ namespace AzureKinect.Components
 {
     public class BodyTrackerComponent : GH_Component
     {
-        // ─── State ──────────────────────────────────────────────────────
+        // ������ State ������������������������������������������������������������������������������������������������������������
         // The tracker is expensive to create (loads ONNX models, allocates
         // GPU memory). Keep it alive across solves once Active goes ON.
         private Tracker _tracker;
 
-        // ─── Bone hierarchy (parent → child) for the 32-joint skeleton ──
+        // ������ Bone hierarchy (parent �� child) for the 32-joint skeleton ����
         // Used to draw connection lines between joints.
         private static readonly (JointType from, JointType to)[] Bones = new[]
         {
@@ -53,23 +53,23 @@ namespace AzureKinect.Components
             (JointType.EarRight,      JointType.Head),
         };
 
-        // ─── Constructor ────────────────────────────────────────────────
+        // ������ Constructor ������������������������������������������������������������������������������������������������
         public BodyTrackerComponent()
           : base("Body Tracker", "Body",
                  "Tracks human bodies in a Kinect feed. Emits per-body skeleton points, bone lines, and persistent body IDs.",
-                 "Azure Kinect", "Device")
+                 "Appendage", "Kinect")
         {
         }
 
-        // ─── Inputs ─────────────────────────────────────────────────────
+        // ������ Inputs ����������������������������������������������������������������������������������������������������������
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Device", "Dev",
+            pManager.AddGenericParameter("Kinect", "Dev",
                 "Live Kinect device handle from Kinect Device component.",
                 GH_ParamAccess.item);
 
             pManager.AddBooleanParameter("Active", "On",
-                "Activate body tracking. First activation takes 5–10s (model load).",
+                "Activate body tracking. First activation takes 5?10s (model load).",
                 GH_ParamAccess.item, false);
 
             pManager.AddIntegerParameter("Min Confidence", "Conf",
@@ -77,7 +77,7 @@ namespace AzureKinect.Components
                 GH_ParamAccess.item, 1);
         }
 
-        // ─── Outputs ────────────────────────────────────────────────────
+        // ������ Outputs ��������������������������������������������������������������������������������������������������������
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddPointParameter("Skeleton Points", "Pts",
@@ -93,7 +93,7 @@ namespace AzureKinect.Components
                 GH_ParamAccess.list);
         }
 
-        // ─── Main solver ────────────────────────────────────────────────
+        // ������ Main solver ������������������������������������������������������������������������������������������������
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             GH_KinectDevice deviceGoo = null;
@@ -104,7 +104,7 @@ namespace AzureKinect.Components
             DA.GetData(1, ref active);
             DA.GetData(2, ref confThreshold);
 
-            // No valid device or not active → ensure tracker is stopped, exit
+            // No valid device or not active �� ensure tracker is stopped, exit
             if (deviceGoo == null || !deviceGoo.IsValid || !active)
             {
                 if (_tracker != null) StopTracker();
@@ -114,12 +114,30 @@ namespace AzureKinect.Components
             // Lazy-create the tracker on first activation
             if (_tracker == null)
             {
+                // Warn the user up-front if a long download is about to start.
+                // (The warning won't render until SolveInstance returns, but it
+                // also writes to the Rhino command line from inside GetModelPath,
+                // which DOES surface immediately.)
+                if (!ModelManager.IsAvailableLocally())
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark,
+                        "First activation: downloading body tracking model (~159 MB). " +
+                        "Rhino may appear unresponsive for ~30 seconds.");
+                }
+
+                string modelPath;
                 try
                 {
-                    var modelPath = System.IO.Path.Combine(
-                        AzureKinectInfo.PluginDirectory ?? "",
-                        "dnn_model_2_0_op11.onnx");
+                    modelPath = ModelManager.GetModelPath();
+                }
+                catch (Exception modelEx)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, modelEx.Message);
+                    return;
+                }
 
+                try
+                {
                     var config = TrackerConfiguration.Default;
                     config.ProcessingMode = TrackerProcessingMode.GpuDirectML;
                     config.ModelPath = modelPath;
@@ -196,12 +214,12 @@ namespace AzureKinect.Components
             DA.SetDataList(2, bodyIds);
         }
 
-        // ─── Helpers ────────────────────────────────────────────────────
+        // ������ Helpers ��������������������������������������������������������������������������������������������������������
 
         /// <summary>
         /// Converts a K4ABT joint to a Rhino Point3d:
         ///  - Filters by confidence threshold (returns Unset if below).
-        ///  - Applies K4A→Rhino coordinate swap (X, Y, Z) → (X, Z, -Y).
+        ///  - Applies K4A��Rhino coordinate swap (X, Y, Z) �� (X, Z, -Y).
         ///  - Applies the floor correction transform from the device handle.
         /// </summary>
         private static Point3d JointToPoint3d(Joint joint, int confThreshold, Transform floorTransform)
@@ -213,7 +231,7 @@ namespace AzureKinect.Components
             float y = joint.PositionMm.Y;
             float z = joint.PositionMm.Z;
 
-            var p = new Point3d(x, z, -y);   // K4A → Rhino swap
+            var p = new Point3d(x, z, -y);   // K4A �� Rhino swap
             p.Transform(floorTransform);
             return p;
         }
@@ -225,19 +243,23 @@ namespace AzureKinect.Components
             _tracker = null;
         }
 
-        // ─── Cleanup ────────────────────────────────────────────────────
+        // ������ Cleanup ��������������������������������������������������������������������������������������������������������
         public override void RemovedFromDocument(GH_Document document)
         {
             base.RemovedFromDocument(document);
             StopTracker();
         }
 
-        // ─── Boilerplate (unique GUID for this component) ───────────────
-        protected override System.Drawing.Bitmap Icon => IconLoader.Load("body_icon.png");
-
+        // ������ Boilerplate (unique GUID for this component) ������������������������������
         public override GH_Exposure Exposure => GH_Exposure.secondary;
+        protected override System.Drawing.Bitmap Icon => IconLoader.Load("BodyTracker24.png");
 
         public override Guid ComponentGuid =>
             new Guid("c4e3a8f1-2b6d-4d5e-9a7c-8e1f3b5c7d9e");
     }
 }
+
+
+
+
+

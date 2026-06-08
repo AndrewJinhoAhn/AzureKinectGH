@@ -1,25 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	
-  <PropertyGroup>
-    <!-- Select the framework(s) you wish to target.
+
+	<PropertyGroup>
+		<!-- Select the framework(s) you wish to target.
         Rhino 6: net45
         Rhino 7: net48
         Rhino 8 Windows: net48, net7.0, net7.0-windows, net7.0-windows10.0.22000.0, etc
         Rhino 8 Mac: net7.0, net7.0-macos, net7.0-macos12.0, etc
     -->
-    <PlatformTarget>x64</PlatformTarget>
-    <TargetFramework>net7.0-windows</TargetFramework>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
-    <TargetExt>.gha</TargetExt>
-    <NoWarn>NU1701;NETSDK1086</NoWarn>
-    <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Platforms>AnyCPU;x64</Platforms>
-  </PropertyGroup>
+		<PlatformTarget>x64</PlatformTarget>
+		<TargetFramework>net7.0-windows</TargetFramework>
+		<EnableDynamicLoading>true</EnableDynamicLoading>
+		<TargetExt>.gha</TargetExt>
+		<NoWarn>NU1701;NETSDK1086</NoWarn>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
+		<Platforms>AnyCPU;x64</Platforms>
+		<Configurations>Debug;Release;Publish</Configurations>
+	</PropertyGroup>
 
 	<PropertyGroup>
-		<Version>1.0.0</Version>
-		<AssemblyVersion>1.0.0.0</AssemblyVersion>
-		<FileVersion>1.0.0.0</FileVersion>
+		<Version>1.1.0</Version>
+		<AssemblyVersion>1.1.0.0</AssemblyVersion>
+		<FileVersion>1.1.0.0</FileVersion>
 		<Title>Azure Kinect</Title>
 		<Authors>Andrew Jinho Ahn</Authors>
 		<Company>Hanyang University CMCIC</Company>
@@ -29,35 +30,56 @@
 		<PackageTags>kinect;azure;body-tracking;3d-scan;depth-camera</PackageTags>
 		<Copyright>Copyright © Andrew Jinho Ahn 2026</Copyright>
 	</PropertyGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="Grasshopper" Version="8.0.23304.9001" ExcludeAssets="runtime" />
-    <PackageReference Include="K4AdotNet" Version="1.4.17" />
-    <PackageReference Include="Microsoft.Azure.Kinect.BodyTracking" Version="1.1.2" />
-    <PackageReference Include="Microsoft.Azure.Kinect.Sensor" Version="1.4.2" />
-  </ItemGroup>
-  
-  <!-- For Windows only builds -->
-  <PropertyGroup Condition="$(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4'))">
-    <UseWindowsForms>true</UseWindowsForms>
-  </PropertyGroup>
 
-  <!-- Reference WinForms for .NET 7.0 on macOS -->
-  <ItemGroup Condition="!($(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4')))">
-    <!-- Rhino 8.11 and later you can use this -->
-    <!-- <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" /> -->
-    
-    <!-- Rhino 8.10 and earlier -->
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" ExcludeAssets="all" GeneratePathProperty="true" />
-    <Reference Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net48)\build\.NETFramework\v4.8\System.Windows.Forms.dll" Private="False" />
-    <PackageReference Include="System.Drawing.Common" Version="7.0.0" ExcludeAssets="runtime" />
-  </ItemGroup>
-	
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\*.png" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Grasshopper" Version="8.0.23304.9001" ExcludeAssets="runtime" />
+		<PackageReference Include="K4AdotNet" Version="1.4.17" />
+		<PackageReference Include="Microsoft.Azure.Kinect.BodyTracking" Version="1.1.2" />
+		<PackageReference Include="Microsoft.Azure.Kinect.Sensor" Version="1.4.2" />
+	</ItemGroup>
 
-    <!-- Strip unused native dependencies (DirectML-only, Full model only) -->
+	<!-- For Windows only builds -->
+	<PropertyGroup Condition="$(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4'))">
+		<UseWindowsForms>true</UseWindowsForms>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<Optimize>false</Optimize>
+		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Publish'">
+	  <Optimize>true</Optimize>
+	  <DebugType>portable</DebugType>
+	  <DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+
+	<!-- Reference WinForms for .NET 7.0 on macOS -->
+	<ItemGroup Condition="!($(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4')))">
+		<!-- Rhino 8.11 and later you can use this -->
+		<!-- <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" /> -->
+
+		<!-- Rhino 8.10 and earlier -->
+		<PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" ExcludeAssets="all" GeneratePathProperty="true" />
+		<Reference Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net48)\build\.NETFramework\v4.8\System.Windows.Forms.dll" Private="False" />
+		<PackageReference Include="System.Drawing.Common" Version="7.0.0" ExcludeAssets="runtime" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)' == 'Publish'">
+		<None Include="manifest.yml">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Resources\*.png" />
+	</ItemGroup>
+
+	<!-- Strip unused native dependencies (DirectML-only, Full model only)
+         Also removes packaging artifacts (.yak, manifest.yml) that confuse the
+         Rhino package manager when RHINO_PACKAGE_DIRS points at this folder
+         during F5 debugging — multiple .yak versions cause Rhino to hang on startup. -->
 	<Target Name="StripUnusedNatives" AfterTargets="Build">
 		<ItemGroup>
 			<_UnusedNatives Include="$(OutDir)onnxruntime_providers_cuda.dll" />
@@ -66,12 +88,21 @@
 			<_UnusedNatives Include="$(OutDir)k4arecord.pdb" />
 			<_UnusedNatives Include="$(OutDir)k4a.pdb" />
 			<_UnusedNatives Include="$(OutDir)dnn_model_2_0_lite_op11.onnx" />
-			<_UnusedNatives Include="$(OutDir)AzureKinect.pdb" />
+			<!-- Full ONNX model (~159 MB) is too large for yak.rhino3d.com (Heroku 30s
+			     upload timeout). Strip from Publish output so .yak stays small; ModelManager
+			     downloads it from GitHub Releases on first body-tracker activation, cached
+			     in %LOCALAPPDATA%\AzureKinect\.  For Debug/Release (F5 dev workflow), keep
+			     the model so BodyTracker works offline without hitting the network. -->
+			<_UnusedNatives Include="$(OutDir)dnn_model_2_0_op11.onnx" Condition="'$(Configuration)' == 'Publish'" />
+			<!-- <_UnusedNatives Include="$(OutDir)AzureKinect.pdb" /> -->
+			<!-- Yak packaging artifacts — must not coexist with the .gha in
+			     RHINO_PACKAGE_DIRS, otherwise Rhino's package manager deadlocks. -->
+			<_UnusedNatives Include="$(OutDir)*.yak" Condition="'$(Configuration)' != 'Publish'" />
+			<_UnusedNatives Include="$(OutDir)manifest.yml" Condition="'$(Configuration)' != 'Publish'" />
 		</ItemGroup>
 		<Delete Files="@(_UnusedNatives)" ContinueOnError="true" />
-		<Exec Command='if exist "$(OutDir)runtimes" rmdir /s /q "$(OutDir)runtimes"'
-			  ContinueOnError="true" />
+		<Exec Command="if exist &quot;$(OutDir)runtimes&quot; rmdir /s /q &quot;$(OutDir)runtimes&quot;" ContinueOnError="true" />
 	</Target>
-	            
+
 
 </Project>

@@ -117,7 +117,7 @@ namespace AzureKinect
 
         // ─── Standard GH_AssemblyInfo overrides ────────────────────────
         public override string Name => "AzureKinect";
-        public override Bitmap Icon => IconLoader.Load("plugin_icon.png");
+        public override Bitmap Icon => IconLoader.Load("AzureKinect24.png");
         public override string Description => "Azure Kinect DK integration for Grasshopper";
         public override Guid Id => new Guid("9bcdcead-87c5-43a4-a653-ee9e253b94d2");
         public override string AuthorName => "Andrew Jinho Ahn";
